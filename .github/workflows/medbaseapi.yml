@@ -1,10 +1,10 @@
-name: Build and deploy .NET Core application to Web App medbaseapi
+name: Build and deploy .NET Core application to Web App MedbaseApi
 on:
   push:
     branches:
     - master
 env:
-  AZURE_WEBAPP_NAME: medbaseapi
+  AZURE_WEBAPP_NAME: MedbaseApi
   AZURE_WEBAPP_PACKAGE_PATH: .\publish
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 7.0.x
@@ -44,5 +44,5 @@ jobs:
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.medbaseapi_DD58 }}
+        publish-profile: ${{ secrets.MedbaseApi_A8C3 }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}

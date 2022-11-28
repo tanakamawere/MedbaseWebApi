@@ -44,5 +44,5 @@ jobs:
       uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.MedbaseApi_A8C3 }}
+        publish-profile: ${{ secrets.MedbaseApi_C6FA }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}

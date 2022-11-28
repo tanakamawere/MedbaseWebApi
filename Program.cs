@@ -20,9 +20,10 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
@@ -54,6 +55,16 @@ subs.MapGet("/{userid}", async (DataContext context, string userid) => await con
 app.MapGet("/topics", async (DataContext context) => await context.Topics.ToListAsync());
 app.MapGet("/topics/{courseref}", async (DataContext context, string courseref) => await context.Topics.Where(x => x.CourseRef == courseref).OrderBy(p => p.Id).ToListAsync());
 
-app.MapGet("/courses", async (DataContext context) => await context.Courses.ToListAsync());
+app.MapGet("/courses",  (DataContext context) => 
+{
+	try
+	{
+		return Results.Ok(context.Courses.ToListAsync());
+    }
+	catch (Exception ex)
+	{
+		return Results.Ok(new { ErrorMessage = ex.Message });
+	}
+});
 
 app.Run();

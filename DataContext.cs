@@ -12,6 +12,5 @@ namespace MedbaseApi
         public DbSet<Article> Articles { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
-        public DbSet<SubTier> SubTiers { get; set; }
     }
 }

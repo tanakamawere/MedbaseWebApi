@@ -131,13 +131,42 @@ app.MapDelete("/articles/{id}", async (DataContext context, int id) =>
     await context.SaveChangesAsync();
 });
 //Subs
-var subs = app.MapGroup("/subs");
+var subs = app.MapGroup("/subscriptions");
+subs.MapGet("subscriptions", async (DataContext context) => await context.Subscriptions.ToListAsync());
 subs.MapPost("/{sub}", async (DataContext context, Subscription sub) =>
 {
     context.Subscriptions.Add(sub);
     await context.SaveChangesAsync();
 });
-subs.MapGet("/{userid}", async (DataContext context, string userid) => await context.Subscriptions.FindAsync(userid));
+subs.MapGet("/{email}", async (DataContext context, string email) =>
+{
+    Subscription subscription = new();
+    try
+    {
+       subscription = await context.Subscriptions.Where(x => x.Email == email).FirstAsync();
+    }
+    catch(Exception ex)
+    {
+        Console.WriteLine(ex.Message);
+    }
+        
+    return subscription;
+});
+subs.MapPut("/{id}", async (DataContext context, int id, Subscription inputSubscription) => 
+{
+    Subscription subscription = await context.Subscriptions.FindAsync(id);
+    if(subscription is null) return Results.NotFound();
+
+    subscription.Phone = inputSubscription.Phone;
+    subscription.Email = inputSubscription.Email;
+    subscription.StartDate = inputSubscription.StartDate;
+    subscription.EndDate = inputSubscription.EndDate;
+    subscription.Amount = inputSubscription.Amount;
+
+    await context.SaveChangesAsync();
+
+    return Results.NoContent();
+});
 
 //Topics
 app.MapGet("/topics", async (DataContext context) => await context.Topics.ToListAsync());

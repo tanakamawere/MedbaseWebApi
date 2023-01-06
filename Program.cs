@@ -30,14 +30,14 @@ app.UseHttpsRedirection();
 var questions = app.MapGroup("/questions");
 questions.MapGet("/", async (DataContext context) => await context.Questions.ToListAsync());
 questions.MapGet("/select/{id}", async (DataContext context, int id) => await context.Questions.FindAsync(id));
-questions.MapGet("/{topic}", async (DataContext context, int topic) => await context.Questions.Where(x => x.TopicId == topic).OrderBy(p => p.Id).ToListAsync());
+questions.MapGet("/{topic}", async (DataContext context, int topic) => await context.Questions.Where(x => x.TopicRef == topic).OrderBy(p => p.Id).ToListAsync());
 questions.MapGet("/{topic}/{numResults}/{page}", async (DataContext context, int topic, double numResults,int page) => 
 {
     var pageResults = numResults;
-    var pageCount = Math.Ceiling(context.Questions.Where(x => x.TopicId == topic).Count() / pageResults);
+    var pageCount = Math.Ceiling(context.Questions.Where(x => x.TopicRef == topic).Count() / pageResults);
 
     var products = await context.Questions
-        .Where(x => x.TopicId == topic)
+        .Where(x => x.TopicRef == topic)
         .Skip((page - 1) * (int)pageResults)
         .Take((int)pageResults)
         .ToListAsync();
@@ -93,7 +93,7 @@ questions.MapPut("/{id}", async (DataContext context, Question inputQuestion, in
     question.ExplanationC = inputQuestion.ExplanationC;
     question.ExplanationD = inputQuestion.ExplanationD;
     question.ExplanationE = inputQuestion.ExplanationE;
-    question.TopicId = inputQuestion.TopicId;
+    question.TopicRef = inputQuestion.TopicRef;
 
     await context.SaveChangesAsync();
 
@@ -132,7 +132,7 @@ app.MapDelete("/articles/{id}", async (DataContext context, int id) =>
 });
 //Subs
 var subs = app.MapGroup("/subscriptions");
-subs.MapGet("subscriptions", async (DataContext context) => await context.Subscriptions.ToListAsync());
+subs.MapGet("/", async (DataContext context) => await context.Subscriptions.ToListAsync());
 subs.MapPost("/{sub}", async (DataContext context, Subscription sub) =>
 {
     context.Subscriptions.Add(sub);
@@ -215,7 +215,7 @@ app.MapDelete("/course/{id}", async (DataContext context, int id) =>
                 if (item.CourseRef.Equals(course.CourseRef))
                 {
                     context.Topics.Remove(item);
-                    context.Questions.RemoveRange(context.Questions.Where(x => x.TopicId == item.TopicRef).ToList());
+                    context.Questions.RemoveRange(context.Questions.Where(x => x.TopicRef == item.TopicRef).ToList());
                 }
             }
             context.Remove(course);

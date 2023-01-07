@@ -99,6 +99,12 @@ questions.MapPut("/{id}", async (DataContext context, Question inputQuestion, in
 
     return Results.NoContent();
 });
+questions.MapGet("/quiz/{topic}/{number}", (DataContext context, int topic, int number) => 
+{
+    return context.Questions.Where(d => d.TopicRef == topic)
+                    .OrderBy(x => Guid.NewGuid())
+                    .Take(number);
+});
 
 //Articles
 app.MapGet("/articles", async (DataContext context) => await context.Articles.ToListAsync());

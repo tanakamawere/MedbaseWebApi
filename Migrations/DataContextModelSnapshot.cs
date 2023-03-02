@@ -50,7 +50,7 @@ namespace MedbaseApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Articles");
+                    b.ToTable("Articles", (string)null);
                 });
 
             modelBuilder.Entity("MedbaseApi.Models.Course", b =>
@@ -75,7 +75,7 @@ namespace MedbaseApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Courses");
+                    b.ToTable("Courses", (string)null);
                 });
 
             modelBuilder.Entity("MedbaseApi.Models.Question", b =>
@@ -139,7 +139,7 @@ namespace MedbaseApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Questions");
+                    b.ToTable("Questions", (string)null);
                 });
 
             modelBuilder.Entity("MedbaseApi.Models.Subscription", b =>
@@ -167,7 +167,7 @@ namespace MedbaseApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Subscriptions");
+                    b.ToTable("Subscriptions", (string)null);
                 });
 
             modelBuilder.Entity("MedbaseApi.Models.Topic", b =>
@@ -194,7 +194,7 @@ namespace MedbaseApi.Migrations
 
                     b.HasIndex("CourseId");
 
-                    b.ToTable("Topics");
+                    b.ToTable("Topics", (string)null);
                 });
 
             modelBuilder.Entity("MedbaseApi.Models.Topic", b =>

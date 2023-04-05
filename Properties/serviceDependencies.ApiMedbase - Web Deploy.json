@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "mssql1": {
+      "ignored": "true",
+      "type": "mssql",
+      "connectionId": "ConnectionStrings:DefaultApiConnection",
+      "dynamicId": null
+    },
+    "mssql2": {
+      "ignored": "true",
+      "type": "mssql",
+      "connectionId": "DefaultApiConnection",
+      "dynamicId": null
+    }
+  }
+}

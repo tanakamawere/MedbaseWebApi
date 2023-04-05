@@ -31,7 +31,7 @@ var questions = app.MapGroup("/questions");
 questions.MapGet("/", async (DataContext context) => await context.Questions.ToListAsync());
 questions.MapGet("/select/{id}", async (DataContext context, int id) => await context.Questions.FindAsync(id));
 questions.MapGet("/{topic}", async (DataContext context, int topic) => await context.Questions.Where(x => x.TopicRef == topic).OrderBy(p => p.Id).ToListAsync());
-questions.MapGet("/{topic}/{numResults}/{page}", async (DataContext context, int topic, double numResults,int page) => 
+questions.MapGet("/{topic}/{numResults}/{page}", async (DataContext context, int topic, double numResults, int page) =>
 {
     var pageResults = numResults;
     var pageCount = Math.Ceiling(context.Questions.Where(x => x.TopicRef == topic).Count() / pageResults);
@@ -43,14 +43,38 @@ questions.MapGet("/{topic}/{numResults}/{page}", async (DataContext context, int
         .ToListAsync();
 
     var response = new QuestionPaged
-    { 
-        Questions= products,
+    {
+        Questions = products,
         CurrentPage = page,
         Pages = (int)pageCount
     };
 
     return response;
 });
+//Search function for questions
+questions.MapGet("/{topic}/{numResults}/{page}/{keyword}", async (DataContext context, int topic, double numResults, int page, string keyword) =>
+{
+    var pageResults = numResults;
+    var pageCount = Math.Ceiling(context.Questions.Where(x => x.TopicRef == topic).Count() / pageResults);
+
+    var products = await context.Questions
+        .Where(x => x.TopicRef == topic)
+        .Where(x => x.QuestionMain.Contains(keyword))
+        .Skip((page - 1) * (int)pageResults)
+        .Take((int)pageResults)
+        .ToListAsync();
+
+    var response = new QuestionPaged
+    {
+        Questions = products,
+        CurrentPage = page,
+        Pages = (int)pageCount
+    };
+
+    return response;
+});
+
+
 questions.MapPost("/{question}", async (DataContext context, Question question) => 
  {
      if (question == null) return;

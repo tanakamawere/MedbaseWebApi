@@ -152,15 +152,23 @@ questions.MapGet("/quiz/{topic}/{number}", (DataContext context, int topic, int 
 app.MapGet("/articles", async (DataContext context) => await context.Articles.ToListAsync());
 app.MapGet("/articles/{id}", async (DataContext context, int id) => await context.Articles.FindAsync(id));
 app.MapGet("/articles/select/{number}", async (DataContext context, int number) => await context.Articles.OrderByDescending(p => p.Id).Take(number).ToListAsync());
-app.MapPost("/articles/{article}", async (DataContext context, Article article) =>
+app.MapPost("/articles/{article}", async Task<Results<Ok, BadRequest>> (DataContext context, Article article) =>
 {
     await context.Articles.AddAsync(article);
-    await context.SaveChangesAsync();
+    
+        if (await context.SaveChangesAsync() > 0)
+        {
+            return TypedResults.Ok();
+        }
+        else
+        {
+            return TypedResults.BadRequest();
+        }
 });
-app.MapPut("/articles/{id}", async (DataContext context, int id, Article inputArticle) => 
+app.MapPut("/articles/{id}", async Task<Results<Ok, BadRequest>> (DataContext context, int id, Article inputArticle) => 
 {
     Article article = await context.Articles.FindAsync(id);
-    if(article is null) return Results.NotFound();
+    if(article is null) return TypedResults.BadRequest();
 
     article.Title = inputArticle.Title;
     article.Body = inputArticle.Body;
@@ -168,15 +176,26 @@ app.MapPut("/articles/{id}", async (DataContext context, int id, Article inputAr
     article.Writer = inputArticle.Writer;
     article.DatePosted = inputArticle.DatePosted;
     article.ImageURL = inputArticle.ImageURL;
-
-    await context.SaveChangesAsync();
-
-    return Results.NoContent();
+        if (await context.SaveChangesAsync() > 0)
+        {
+            return TypedResults.Ok();
+        }
+        else
+        {
+            return TypedResults.BadRequest();
+        }
 });
-app.MapDelete("/articles/{id}", async (DataContext context, int id) => 
+app.MapDelete("/articles/{id}", async Task<Results<Ok, BadRequest>> (DataContext context, int id) => 
 {
     context.Articles.Remove(await context.Articles.FindAsync(id));
-    await context.SaveChangesAsync();
+    if (await context.SaveChangesAsync() > 0)
+        {
+            return TypedResults.Ok();
+        }
+        else
+        {
+            return TypedResults.BadRequest();
+        }
 });
 //Subs
 var subs = app.MapGroup("/subscriptions");
@@ -244,7 +263,7 @@ app.MapPost("/topics/{topic}", async Task<Results<Ok<string>, BadRequest<string>
         return TypedResults.BadRequest($"Error message: {ex}");
     }
 });
-app.MapPut("/topics/{id}", async Task<Results<Ok<string>, BadRequest<string>>>  (DataContext context, int id, Topic inputTopic) => 
+app.MapPut("/topics/{id}", async Task<Results<Ok, BadRequest>>  (DataContext context, int id, Topic inputTopic) => 
 {
     try
     {
@@ -254,12 +273,19 @@ app.MapPut("/topics/{id}", async Task<Results<Ok<string>, BadRequest<string>>>  
         topic.TopicRef = inputTopic.TopicRef;
         topic.Name = inputTopic.Name;
 
-        await context.SaveChangesAsync();
-        return TypedResults.Ok("Article edited successfully");
+        
+        if (await context.SaveChangesAsync() > 0)
+        {
+            return TypedResults.Ok();
+        }
+        else
+        {
+            return TypedResults.BadRequest();
+        }
     }
     catch (System.Exception ex)
     {
-        return TypedResults.BadRequest($"Error message: {ex}");
+        return TypedResults.BadRequest();
     }
 });
 app.MapDelete("/topics/{id}", async (DataContext context, int id) => 
@@ -333,28 +359,152 @@ app.MapPut("/courses/{id}", async Task<Results<Ok<string>, BadRequest<string>>> 
 
 
 //Answer Corrections Api Calls
-app.MapPost("/corrections/{correction}", async (DataContext context, Corrections correction) =>
+app.MapPost("/corrections/{correction}", async Task<Results<Ok, BadRequest<string>>> (DataContext context, Corrections correction) =>
 {
-    await context.Corrections.AddAsync(correction);
-    await context.SaveChangesAsync();
+    try
+    {
+        await context.Corrections.AddAsync(correction);
+        
+        if (await context.SaveChangesAsync() > 0)
+        {
+            return TypedResults.Ok();
+        }
+        else
+        {
+            return TypedResults.BadRequest("Something went wrong");
+        }
+    }
+    catch (System.Exception ex)
+    {
+        return TypedResults.BadRequest($"Error message: {ex}");
+    }
 });
 
 app.MapGet("/corrections/", async (DataContext context) => await context.Corrections.ToListAsync());
-app.MapDelete("/corrections/deleteone/{id}", async Task<Results<Ok<string>, BadRequest>> (DataContext context, int id) => 
+app.MapDelete("/corrections/deleteone/{id}", async Task<Results<Ok, BadRequest>> (DataContext context, int id) => 
 {
     Corrections corr = await context.Corrections.FindAsync(id);
     context.Corrections.Remove(corr);   
-    var result = await context.SaveChangesAsync();
-    return TypedResults.Ok("Deletion successful");
+    
+        if (await context.SaveChangesAsync() > 0)
+        {
+            return TypedResults.Ok();
+        }
+        else
+        {
+            return TypedResults.BadRequest();
+        }
 });
-app.MapDelete("/corrections/clearall/", async Task<Results<Ok<string>, BadRequest>> (DataContext context) => 
+app.MapDelete("/corrections/clearall/", async Task<Results<Ok, BadRequest>> (DataContext context) => 
 {
     context.Corrections.RemoveRange(context.Corrections);
-    var result = await context.SaveChangesAsync();
-    return TypedResults.Ok("Deletion successful");
+    
+        if (await context.SaveChangesAsync() > 0)
+        {
+            return TypedResults.Ok();
+        }
+        else
+        {
+            return TypedResults.BadRequest();
+        }
 });
 
-app.MapPost("/corrections/merge", async Task<Results<Ok<string>, BadRequest>> (DataContext context) => 
+app.MapPost("/corrections/mergeone/{id}", async Task<Results<Ok, BadRequest>> (DataContext context, int id) =>
+{               
+    Corrections item = await context.Corrections.FindAsync(id);
+    if (item is not null)
+    {
+        Question question = new();
+        switch (item.QuestionChild.ToUpper())
+        {
+            case "A":
+                question = new()
+                {
+                    Id = item.QuestionId,
+                    AnswerA = item.SuggestedAnswer,
+                    ExplanationA = item.SuggestedExplanation
+                };
+        
+                context.Questions.Attach(question);
+                context.Entry(question).Property(x => x.AnswerA).IsModified = true;
+                
+                if (!string.IsNullOrEmpty(item.SuggestedExplanation))
+                    context.Entry(question).Property(x => x.ExplanationA).IsModified = true;
+                break;
+            case "B":
+                question = new()
+                {
+                    Id = item.QuestionId,
+                    AnswerB = item.SuggestedAnswer,
+                    ExplanationB = item.SuggestedExplanation
+                };
+                context.Questions.Attach(question);
+                context.Entry(question).Property(x => x.AnswerB).IsModified = true;
+                
+                if (!string.IsNullOrEmpty(item.SuggestedExplanation))
+                    context.Entry(question).Property(x => x.ExplanationB).IsModified = true;
+                break;
+            case "C":
+                question = new()
+                {
+                    Id = item.QuestionId,
+                    AnswerC = item.SuggestedAnswer,
+                    ExplanationC = item.SuggestedExplanation
+                };
+                context.Questions.Attach(question);
+                context.Entry(question).Property(x => x.AnswerC).IsModified = true;
+                
+                if (!string.IsNullOrEmpty(item.SuggestedExplanation))
+                    context.Entry(question).Property(x => x.ExplanationC).IsModified = true;
+                break;
+            case "D":
+                question = new()
+                {
+                    Id = item.QuestionId,
+                    AnswerD = item.SuggestedAnswer,
+                    ExplanationD = item.SuggestedExplanation
+                };
+                context.Questions.Attach(question);
+                context.Entry(question).Property(x => x.AnswerD).IsModified = true;
+                
+                if (!string.IsNullOrEmpty(item.SuggestedExplanation))
+                    context.Entry(question).Property(x => x.ExplanationD).IsModified = true;
+                break;
+            case "E":
+                question = new()
+                {
+                    Id = item.QuestionId,
+                    AnswerE = item.SuggestedAnswer,
+                    ExplanationE = item.SuggestedExplanation
+                };
+                context.Questions.Attach(question);
+                context.Entry(question).Property(x => x.AnswerE).IsModified = true;
+                
+                if (!string.IsNullOrEmpty(item.SuggestedExplanation))
+                    context.Entry(question).Property(x => x.ExplanationE).IsModified = true;
+                break;
+            default:
+                break;
+        }
+        await context.SaveChangesAsync();
+
+        context.Corrections.Remove(item);
+        if (await context.SaveChangesAsync() > 0)
+        {
+            return TypedResults.Ok();
+        }
+        else
+        {
+            return TypedResults.BadRequest();
+        }
+    }   
+    else 
+    {
+        return TypedResults.BadRequest();
+    }             
+});
+
+app.MapPost("/corrections/mergeall", async Task<Results<Ok, BadRequest>> (DataContext context) => 
 {
     List<Corrections> listOfCurrentCorrections = await context.Corrections.ToListAsync();
     if (listOfCurrentCorrections.Any())
@@ -440,16 +590,16 @@ app.MapPost("/corrections/merge", async Task<Results<Ok<string>, BadRequest>> (D
                 context.Corrections.Remove(item);
                 await context.SaveChangesAsync();
             }
-            return TypedResults.Ok("All corrections merged successfully");
+            return TypedResults.Ok();
         }
-        catch (System.Exception ex)
+        catch (System.Exception)
         {
-            return TypedResults.Ok($"Something went wrong. Error message: {ex.InnerException.Message}");
+            return TypedResults.Ok();
         }
     }
     else
     {
-        return TypedResults.Ok("There are no corrections to make");
+        return TypedResults.Ok();
     }
 });
 

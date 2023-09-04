@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MedbaseApi;
 using MedbaseLibrary.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -357,6 +358,15 @@ app.MapPut("/courses/{id}", async Task<Results<Ok<string>, BadRequest<string>>> 
     }
 });
 
+//Gets articles and courses for Maui App 
+app.MapGet("/dashboard/getall", async (DataContext context) =>
+{
+    CourseArticlesDto courseArticlesDto = new CourseArticlesDto();
+    courseArticlesDto.Articles = await context.Articles.OrderByDescending(p => p.Id).Take(3).ToListAsync();
+    courseArticlesDto.Courses = await context.Courses.ToListAsync();
+
+    return courseArticlesDto;
+});
 
 //Answer Corrections Api Calls
 app.MapPost("/corrections/{correction}", async Task<Results<Ok, BadRequest<string>>> (DataContext context, Corrections correction) =>

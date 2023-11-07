@@ -1,4 +1,4 @@
-﻿using MedbaseApi.Models;
+﻿using MedbaseLibrary.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedbaseApi
@@ -13,5 +13,6 @@ namespace MedbaseApi
         public DbSet<Corrections> Corrections {get; set;}
         public DbSet<Course> Courses { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
+        public DbSet<User> Users { get; set; }
     }
 }

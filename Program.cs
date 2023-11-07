@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using MedbaseApi;
-using MedbaseApi.Models;
+using MedbaseLibrary.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Data;
+using MedbaseLibrary.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -612,6 +613,95 @@ app.MapPost("/corrections/mergeall", async Task<Results<Ok, BadRequest>> (DataCo
         return TypedResults.Ok();
     }
 });
+app.MapGet("/corrections/community", async (DataContext context) =>
+{
+    List<Corrections> listOfCorrections = await context.Corrections.ToListAsync();
+    List<CorrectionCommunityDto> listOfCorrectionCommunityDto = new();
+    List<Guid> listOfUsers = new();
+
+    foreach (Corrections item in listOfCorrections)
+    {
+        if (!listOfUsers.Contains(item.CorrectionAuthor))
+        {
+            listOfUsers.Add(item.CorrectionAuthor);
+        }
+    }
+
+    foreach (Guid item in listOfUsers)
+    {
+        CorrectionCommunityDto correctionCommunityDto = new();
+        correctionCommunityDto.User = await context.Users.Where(x => x.UserGuid == item).FirstAsync();
+        correctionCommunityDto.NumberOfCorrections = listOfCorrections.Where(x => x.CorrectionAuthor == item).Count();
+        listOfCorrectionCommunityDto.Add(correctionCommunityDto);
+    }
+
+    return listOfCorrectionCommunityDto;
+});
+
+
+//User methods
+//Create user 
+app.MapPost("/users/{user}", async Task<Results<Ok, BadRequest<string>>> (DataContext context, User user) =>
+{
+    string returnMessage = string.Empty;
+
+    if (RegexMethods.IsValidUsername(user.Username) == false)
+    {
+        returnMessage += "Username is invalid. It should contain letters and underscore and fullstops only";
+        return TypedResults.BadRequest(returnMessage);
+    }
+    else if (RegexMethods.IsValidPhoneNumber(user.PhoneNumber) == false)
+    {
+        returnMessage += "Phone number is invalid. It should contain only numbers and should be 10 digits long";
+        return TypedResults.BadRequest(returnMessage);
+    }
+    else
+    {
+        try
+        {
+            await context.Users.AddAsync(user);
+            await context.SaveChangesAsync();
+
+            returnMessage += "User created successfully";
+            return TypedResults.Ok();
+        }
+        catch (Exception ex)
+        {
+            returnMessage += ex.Message;
+            return TypedResults.BadRequest(returnMessage);
+        }
+    }
+});
+
+//Get user by username
+app.MapGet("/users/username/{username}", async Task<Results<Ok<User>, BadRequest<string>>> (DataContext context, string username) =>
+{
+    User user = new();
+    try
+    {
+        user = await context.Users.Where(x => x.Username == username).FirstAsync();
+        return TypedResults.Ok(user);
+    }
+    catch (Exception ex)
+    {
+        return TypedResults.BadRequest("User not found");
+    }
+});
+
+//Get user by GUID
+app.MapGet("users/guid/{userguid}", async Task<Results<Ok<User>, BadRequest<string>>> (DataContext context, Guid UserGuid) =>
+{
+    User user = new();
+    try
+    {
+        user = await context.Users.Where(x => x.UserGuid == UserGuid).FirstAsync();
+        return TypedResults.Ok(user);
+    }
+    catch (Exception ex)
+    {
+        return TypedResults.BadRequest("User not found");
+    }
+}); 
 
 
 app.Run();

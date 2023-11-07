@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using MedbaseApi;
 using MedbaseApi.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
+using System.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 

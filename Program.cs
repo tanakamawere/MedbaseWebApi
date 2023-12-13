@@ -3,6 +3,7 @@ using MedbaseApi;
 using MedbaseApi.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Data;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -197,43 +198,6 @@ app.MapDelete("/articles/{id}", async Task<Results<Ok, BadRequest>> (DataContext
         {
             return TypedResults.BadRequest();
         }
-});
-//Subs
-var subs = app.MapGroup("/subscriptions");
-subs.MapGet("/", async (DataContext context) => await context.Subscriptions.ToListAsync());
-subs.MapPost("/{sub}", async (DataContext context, Subscription sub) =>
-{
-    context.Subscriptions.Add(sub);
-    await context.SaveChangesAsync();
-});
-subs.MapGet("/{email}", async (DataContext context, string email) =>
-{
-    Subscription subscription = new();
-    try
-    {
-       subscription = await context.Subscriptions.Where(x => x.Email == email).FirstAsync();
-    }
-    catch(Exception ex)
-    {
-        Console.WriteLine(ex.Message);
-    }
-        
-    return subscription;
-});
-subs.MapPut("/{id}", async (DataContext context, int id, Subscription inputSubscription) => 
-{
-    Subscription subscription = await context.Subscriptions.FindAsync(id);
-    if(subscription is null) return Results.NotFound();
-
-    subscription.Phone = inputSubscription.Phone;
-    subscription.Email = inputSubscription.Email;
-    subscription.StartDate = inputSubscription.StartDate;
-    subscription.EndDate = inputSubscription.EndDate;
-    subscription.Amount = inputSubscription.Amount;
-
-    await context.SaveChangesAsync();
-
-    return Results.NoContent();
 });
 
 //Topics
@@ -613,5 +577,51 @@ app.MapPost("/corrections/mergeall", async Task<Results<Ok, BadRequest>> (DataCo
     }
 });
 
+//Notes calls
+app.MapGet("/notes/get/{topicReference}", async(DataContext context, int topicReference) =>
+{
+    return await context.Notes.FindAsync(topicReference);
+});
+app.MapPost("/notes/post/{note}", async Task<Results<Ok, BadRequest>>(DataContext context, Note note) =>
+{
+    try
+    {
+        await context.Notes.AddAsync(note);
+        await context.SaveChangesAsync();
+        return TypedResults.Ok();
+    }
+    catch (System.Exception)
+    {
+        return TypedResults.BadRequest();
+    }
+});
+app.MapPut("/notes/put/{note}", async Task<Results<Ok, BadRequest>> (DataContext context, Note note) =>
+{
+    try
+    {
+        Note noteToEdit = await context.Notes.FindAsync(note.TopicReference);
+        noteToEdit.Text = note.Text;
+        await context.SaveChangesAsync();
+        return TypedResults.Ok();
+    }
+    catch (System.Exception)
+    {
+        return TypedResults.BadRequest();
+    }
+});
+app.MapDelete("/notes/delete/{topicReference}", async Task<Results<Ok, BadRequest>> (DataContext context, int topicReference) =>
+{
+    try
+    {
+        Note noteToDelete = await context.Notes.FindAsync(topicReference);
+        context.Notes.Remove(noteToDelete);
+        await context.SaveChangesAsync();
+        return TypedResults.Ok();
+    }
+    catch (System.Exception)
+    {
+        return TypedResults.BadRequest();
+    }
+});
 
 app.Run();

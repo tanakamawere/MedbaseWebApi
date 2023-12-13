@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MedbaseApi.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20221126105308_AddingCourseTopicRef2")]
-    partial class AddingCourseTopicRef2
+    [Migration("20231213162514_reset")]
+    partial class reset
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -34,26 +34,56 @@ namespace MedbaseApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Body")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("DatePosted")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ImageURL")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Summary")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Writer")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Articles");
+                });
+
+            modelBuilder.Entity("MedbaseApi.Models.Corrections", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("QuestionChild")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("SuggestedAnswer")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SuggestedExplanation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Corrections");
                 });
 
             modelBuilder.Entity("MedbaseApi.Models.Course", b =>
@@ -65,20 +95,46 @@ namespace MedbaseApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CourseRef")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImageURL")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Courses");
+                });
+
+            modelBuilder.Entity("MedbaseApi.Models.Note", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DateUpdated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Text")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TopicReference")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notes");
                 });
 
             modelBuilder.Entity("MedbaseApi.Models.Question", b =>
@@ -89,19 +145,19 @@ namespace MedbaseApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool?>("AnswerA")
+                    b.Property<bool>("AnswerA")
                         .HasColumnType("bit");
 
-                    b.Property<bool?>("AnswerB")
+                    b.Property<bool>("AnswerB")
                         .HasColumnType("bit");
 
-                    b.Property<bool?>("AnswerC")
+                    b.Property<bool>("AnswerC")
                         .HasColumnType("bit");
 
-                    b.Property<bool?>("AnswerD")
+                    b.Property<bool>("AnswerD")
                         .HasColumnType("bit");
 
-                    b.Property<bool?>("AnswerE")
+                    b.Property<bool>("AnswerE")
                         .HasColumnType("bit");
 
                     b.Property<string>("ChildA")
@@ -137,73 +193,12 @@ namespace MedbaseApi.Migrations
                     b.Property<string>("QuestionMain")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long?>("TopicId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("TopicRef")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TopicId");
 
                     b.ToTable("Questions");
-                });
-
-            modelBuilder.Entity("MedbaseApi.Models.SubTier", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<double>("Amount")
-                        .HasColumnType("float");
-
-                    b.Property<int>("Duration")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SubTiers");
-                });
-
-            modelBuilder.Entity("MedbaseApi.Models.Subscription", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<double>("Amount")
-                        .HasColumnType("float");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Reference")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("SubTierId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserEmail")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SubTierId");
-
-                    b.ToTable("Subscriptions");
                 });
 
             modelBuilder.Entity("MedbaseApi.Models.Topic", b =>
@@ -214,53 +209,20 @@ namespace MedbaseApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<int?>("CourseId")
-                        .HasColumnType("int");
-
                     b.Property<string>("CourseRef")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TopicRef")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("TopicRef")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CourseId");
-
                     b.ToTable("Topics");
-                });
-
-            modelBuilder.Entity("MedbaseApi.Models.Question", b =>
-                {
-                    b.HasOne("MedbaseApi.Models.Topic", "Topic")
-                        .WithMany()
-                        .HasForeignKey("TopicId");
-
-                    b.Navigation("Topic");
-                });
-
-            modelBuilder.Entity("MedbaseApi.Models.Subscription", b =>
-                {
-                    b.HasOne("MedbaseApi.Models.SubTier", "SubTier")
-                        .WithMany()
-                        .HasForeignKey("SubTierId");
-
-                    b.Navigation("SubTier");
-                });
-
-            modelBuilder.Entity("MedbaseApi.Models.Topic", b =>
-                {
-                    b.HasOne("MedbaseApi.Models.Course", null)
-                        .WithMany("Topics")
-                        .HasForeignKey("CourseId");
-                });
-
-            modelBuilder.Entity("MedbaseApi.Models.Course", b =>
-                {
-                    b.Navigation("Topics");
                 });
 #pragma warning restore 612, 618
         }

@@ -5,33 +5,31 @@
 namespace MedbaseApi.Migrations
 {
     /// <inheritdoc />
-    public partial class AnswerCorrectionsTable2 : Migration
+    public partial class NotesThing : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Corrections",
+                name: "Notes",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    QuestionId = table.Column<int>(type: "int", nullable: false),
-                    SuggestedAnswer = table.Column<bool>(type: "bit", nullable: false),
-                    SuggestedExplanation = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ChangeSynced = table.Column<bool>(type: "bit", nullable: false)
+                    TopicReference = table.Column<int>(type: "int", nullable: false),
+                    DateUpdated = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Text = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Corrections", x => x.Id);
+                    table.PrimaryKey("PK_Notes", x => x.Id);
                 });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Corrections");
+
         }
     }
 }

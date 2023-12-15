@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MedbaseLibrary\MedbaseLibrary.csproj" />
+    <ProjectReference Include="..\MedbaseWebApi\MedbaseLibrary\MedbaseLibrary.csproj" />
   </ItemGroup>
 
 </Project>

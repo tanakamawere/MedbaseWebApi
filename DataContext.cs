@@ -1,4 +1,4 @@
-﻿using MedbaseApi.Models;
+﻿using MedbaseLibrary.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedbaseApi

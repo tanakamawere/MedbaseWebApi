@@ -1,9 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using MedbaseApi;
-using MedbaseApi.Models;
+using MedbaseLibrary.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Data;
-using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -578,10 +577,59 @@ app.MapPost("/corrections/mergeall", async Task<Results<Ok, BadRequest>> (DataCo
 });
 
 //Notes calls
+//Notes call to get all notes in a list
+app.MapGet("/notes/getall", async (DataContext context) =>
+{ 
+    List<Note> notes = await context.Notes.ToListAsync();
+    List<NoteDto> noteDtos = new();
+
+    foreach (var item in notes)
+    {
+        Topic topic = await context.Topics.Where(x => x.TopicRef == item.TopicReference).FirstOrDefaultAsync();
+        NoteDto noteDto = new()
+        {
+            Id = item.Id,
+            TopicReferenceName = topic.Name,
+            DateUpdated = item.DateUpdated,
+            Text = item.Text
+        };
+        noteDtos.Add(noteDto);
+    }
+    return noteDtos;
+});
+
 app.MapGet("/notes/get/{topicReference}", async(DataContext context, int topicReference) =>
 {
-    return await context.Notes.FindAsync(topicReference);
+    try
+    {
+        Note note = await context.Notes.Where(x => x.TopicReference == topicReference).FirstOrDefaultAsync();
+        NoteDto noteDto = new()
+        {
+            Id = note.Id,
+            TopicReferenceName = (await context.Topics.Where(x => x.TopicRef == topicReference).FirstOrDefaultAsync()).Name,
+            DateUpdated = note.DateUpdated,
+            Text = note.Text
+        };
+        return noteDto;
+    }
+    catch (System.Exception)
+    {
+        return null;
+    }
 });
+
+app.MapGet("/notes/get_with_reference/{topicReference}", async(DataContext context, int topicReference) =>
+{
+    try
+    {
+        return await context.Notes.Where(x => x.TopicReference == topicReference).FirstOrDefaultAsync();
+    }
+    catch (System.Exception)
+    {
+        return null;
+    }
+});
+
 app.MapPost("/notes/post/{note}", async Task<Results<Ok, BadRequest>>(DataContext context, Note note) =>
 {
     try
@@ -599,7 +647,8 @@ app.MapPut("/notes/put/{note}", async Task<Results<Ok, BadRequest>> (DataContext
 {
     try
     {
-        Note noteToEdit = await context.Notes.FindAsync(note.TopicReference);
+        Note noteToEdit = await context.Notes.FindAsync(note.Id);
+        noteToEdit.DateUpdated = note.DateUpdated;
         noteToEdit.Text = note.Text;
         await context.SaveChangesAsync();
         return TypedResults.Ok();
@@ -609,11 +658,11 @@ app.MapPut("/notes/put/{note}", async Task<Results<Ok, BadRequest>> (DataContext
         return TypedResults.BadRequest();
     }
 });
-app.MapDelete("/notes/delete/{topicReference}", async Task<Results<Ok, BadRequest>> (DataContext context, int topicReference) =>
+app.MapDelete("/notes/delete/{id}", async Task<Results<Ok, BadRequest>> (DataContext context, int id) =>
 {
     try
     {
-        Note noteToDelete = await context.Notes.FindAsync(topicReference);
+        Note noteToDelete = await context.Notes.FindAsync(id);
         context.Notes.Remove(noteToDelete);
         await context.SaveChangesAsync();
         return TypedResults.Ok();
@@ -622,6 +671,30 @@ app.MapDelete("/notes/delete/{topicReference}", async Task<Results<Ok, BadReques
     {
         return TypedResults.BadRequest();
     }
+});
+
+//Course Topics calls
+app.MapGet("/notes/coursetopics/get/{courseReference}", async (DataContext context, string courseReference) =>
+{
+    CourseTopicsDto courseTopicsDto = new();
+    courseTopicsDto.Course = courseReference;
+    courseTopicsDto.Topics = await context.Topics.Where(x => x.CourseRef == courseReference).ToListAsync();
+    return courseTopicsDto;
+});
+//call to get all courses and their topics
+app.MapGet("/notes/coursetopics/getall", async (DataContext context) =>
+{
+    List<CourseTopicsDto> courseTopicsDtos = new();
+    List<Course> courses = await context.Courses.ToListAsync();
+    foreach (Course course in courses)
+    {
+        CourseTopicsDto courseTopicsDto = new();
+        courseTopicsDto.Course = course.Title;
+        courseTopicsDto.CourseImage = course.ImageURL;
+        courseTopicsDto.Topics = await context.Topics.Where(x => x.CourseRef == course.CourseRef).ToListAsync();
+        courseTopicsDtos.Add(courseTopicsDto);
+    }
+    return courseTopicsDtos;
 });
 
 app.Run();

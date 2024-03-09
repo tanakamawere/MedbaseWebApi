@@ -85,8 +85,8 @@ questions.MapGet("/{topic}/{numResults}/{page}/{keyword}", async (DataContext co
 });
 
 
-questions.MapPost("/{question}", async Task<Results<Ok<string>, NotFound>> (DataContext context, Question question) => 
- {
+questions.MapPost("/", async Task<Results<Ok<string>, NotFound>> (DataContext context, Question question) => 
+{
     if (question == null) return TypedResults.Ok("Something wrong happened");
 
      try
@@ -153,7 +153,7 @@ questions.MapGet("/quiz/{topic}/{number}", (DataContext context, int topic, int 
 app.MapGet("/articles", async (DataContext context) => await context.Articles.ToListAsync());
 app.MapGet("/articles/{id}", async (DataContext context, int id) => await context.Articles.FindAsync(id));
 app.MapGet("/articles/select/{number}", async (DataContext context, int number) => await context.Articles.OrderByDescending(p => p.Id).Take(number).ToListAsync());
-app.MapPost("/articles/{article}", async Task<Results<Ok, BadRequest>> (DataContext context, Article article) =>
+app.MapPost("/articles/", async Task<Results<Ok, BadRequest>> (DataContext context, Article article) =>
 {
     await context.Articles.AddAsync(article);
     
@@ -207,7 +207,7 @@ app.MapGet("topics/select/{id}", async (DataContext context, long id) =>
     return topic;
 });
 app.MapGet("/topics/{courseref}", async (DataContext context, string courseref) => await context.Topics.Where(x => x.CourseRef == courseref).OrderBy(p => p.Id).ToListAsync());
-app.MapPost("/topics/{topic}", async Task<Results<Ok<string>, BadRequest<string>>> (DataContext context, Topic topic) => 
+app.MapPost("/topics/", async Task<Results<Ok<string>, BadRequest<string>>> (DataContext context, Topic topic) => 
 {
     try
     {
@@ -261,7 +261,7 @@ app.MapDelete("/topics/{id}", async (DataContext context, int id) =>
 //Courses
 app.MapGet("/courses",  async (DataContext context) => await context.Courses.ToListAsync());
 app.MapGet("/courses/{id}", async (DataContext context, int id) => await context.Courses.FindAsync(id));
-app.MapPost("/courses/{course}", async Task<Results<Ok<string>, BadRequest<string>>>  (DataContext context, Course course) => 
+app.MapPost("/courses/", async Task<Results<Ok<string>, BadRequest<string>>>  (DataContext context, Course course) => 
 {    
     try
     {
@@ -324,7 +324,7 @@ app.MapPut("/courses/{id}", async Task<Results<Ok<string>, BadRequest<string>>> 
 //Gets articles and courses for Maui App 
 app.MapGet("/dashboard/getall", async (DataContext context) =>
 {
-    CourseArticlesDto courseArticlesDto = new CourseArticlesDto();
+    CourseArticlesDto courseArticlesDto = new();
     courseArticlesDto.Articles = await context.Articles.OrderByDescending(p => p.Id).Take(3).ToListAsync();
     courseArticlesDto.Courses = await context.Courses.ToListAsync();
 
@@ -332,7 +332,7 @@ app.MapGet("/dashboard/getall", async (DataContext context) =>
 });
 
 //Answer Corrections Api Calls
-app.MapPost("/corrections/{correction}", async Task<Results<Ok, BadRequest<string>>> (DataContext context, Corrections correction) =>
+app.MapPost("/corrections/", async Task<Results<Ok, BadRequest<string>>> (DataContext context, Corrections correction) =>
 {
     try
     {
@@ -480,7 +480,7 @@ app.MapPost("/corrections/mergeone/{id}", async Task<Results<Ok, BadRequest>> (D
 app.MapPost("/corrections/mergeall", async Task<Results<Ok, BadRequest>> (DataContext context) => 
 {
     List<Corrections> listOfCurrentCorrections = await context.Corrections.ToListAsync();
-    if (listOfCurrentCorrections.Any())
+    if (listOfCurrentCorrections.Count != 0)
     {
         try
         {
@@ -630,7 +630,7 @@ app.MapGet("/notes/get_with_reference/{topicReference}", async(DataContext conte
     }
 });
 
-app.MapPost("/notes/post/{note}", async Task<Results<Ok, BadRequest>>(DataContext context, Note note) =>
+app.MapPost("/notes/post/", async Task<Results<Ok, BadRequest>>(DataContext context, Note note) =>
 {
     try
     {
@@ -643,7 +643,7 @@ app.MapPost("/notes/post/{note}", async Task<Results<Ok, BadRequest>>(DataContex
         return TypedResults.BadRequest();
     }
 });
-app.MapPut("/notes/put/{note}", async Task<Results<Ok, BadRequest>> (DataContext context, Note note) =>
+app.MapPut("/notes/put/", async Task<Results<Ok, BadRequest>> (DataContext context, Note note) =>
 {
     try
     {
@@ -676,9 +676,11 @@ app.MapDelete("/notes/delete/{id}", async Task<Results<Ok, BadRequest>> (DataCon
 //Course Topics calls
 app.MapGet("/notes/coursetopics/get/{courseReference}", async (DataContext context, string courseReference) =>
 {
-    CourseTopicsDto courseTopicsDto = new();
-    courseTopicsDto.Course = courseReference;
-    courseTopicsDto.Topics = await context.Topics.Where(x => x.CourseRef == courseReference).ToListAsync();
+    CourseTopicsDto courseTopicsDto = new()
+    {
+        Course = courseReference,
+        Topics = await context.Topics.Where(x => x.CourseRef == courseReference).ToListAsync()
+    };
     return courseTopicsDto;
 });
 //call to get all courses and their topics

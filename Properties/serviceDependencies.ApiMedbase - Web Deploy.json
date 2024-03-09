@@ -11,6 +11,10 @@
       "type": "mssql",
       "connectionId": "DefaultApiConnection",
       "dynamicId": null
+    },
+    "apis1": {
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.ApiManagement/service/Medbaseapi/apis/MedbaseApi",
+      "type": "apis.azure"
     }
   }
 }

@@ -11,6 +11,7 @@ using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.OpenApi.Models;
 using System.ComponentModel;
+using Microsoft.Extensions.ObjectPool;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -791,23 +792,13 @@ app.MapGet("/notes/coursetopics/getall", async (DataContext context) =>
 });
 
 //AUTH
-app.MapPost("/security/getToken",
-[AllowAnonymous] (User user) =>
+app.MapPost("/auth/getToken", [AllowAnonymous] async (UserManager<IdentityUser> userManager, User user) =>
 {
+    var identityUsr = await userManager.FindByNameAsync(user.UserName);
 
-    if (user.UserName == "user1" && user.Password == "password1")
+    if (await userManager.CheckPasswordAsync(identityUsr, user.Password))
     {
-        var issuer = builder.Configuration["Jwt:Issuer"];
-        var audience = builder.Configuration["Jwt:Audience"];
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]));
-        var credentials = new SigningCredentials(securityKey,SecurityAlgorithms.HmacSha256);
-
-        var token = new JwtSecurityToken(issuer: issuer,audience: audience,signingCredentials: credentials);
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var stringToken = tokenHandler.WriteToken(token);
-
-        return Results.Ok(stringToken);
+        return Results.Ok(GetJWTToken());
     }
     else
     {
@@ -815,5 +806,54 @@ app.MapPost("/security/getToken",
     }
 });
 
+app.MapPost("/auth/signup", [AllowAnonymous] async (UserManager<IdentityUser> userMgr, User user) =>
+{
+    var identityUser = new IdentityUser()
+    {
+        UserName = user.UserName,
+        PhoneNumber = user.PhoneNumber,
+        Email = user.Email
+    };
+
+    var result = await userMgr.CreateAsync(identityUser, user.Password);
+
+    if (result.Succeeded)
+    {
+        //Return JWT Token
+        return Results.Ok(GetJWTToken());
+    }
+    else
+    {
+        return Results.BadRequest();
+    }
+});
+
+app.MapPost("/auth/signin", [AllowAnonymous] async (UserManager<IdentityUser> userMgr, User user) =>
+{
+    var identityUser = await userMgr.FindByNameAsync(user.UserName);
+
+    if (identityUser != null && await userMgr.CheckPasswordAsync(identityUser, user.Password))
+    {
+        return Results.Ok();
+    }
+    else
+    {
+        return Results.Unauthorized();
+    }
+});
+
+string GetJWTToken()
+{
+    var issuer = builder.Configuration["Jwt:Issuer"];
+    var audience = builder.Configuration["Jwt:Audience"];
+    var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]));
+    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+
+    var token = new JwtSecurityToken(issuer: issuer, audience: audience, signingCredentials: credentials);
+
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var stringToken = tokenHandler.WriteToken(token);
+    return stringToken;
+};
 
 app.Run();

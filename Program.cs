@@ -3,8 +3,64 @@ using MedbaseApi;
 using MedbaseLibrary.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.OpenApi.Models;
+using System.ComponentModel;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//Swagger Config for Putting JWT Token in requests
+var securityScheme = new OpenApiSecurityScheme()
+{
+    Name = "Authorization",
+    Type = SecuritySchemeType.ApiKey,
+    Scheme = "Bearer",
+    BearerFormat = "JWT",
+    In = ParameterLocation.Header,
+    Description = "JSON Web Token based security",
+};
+
+var securityReq = new OpenApiSecurityRequirement()
+{
+    {
+        new OpenApiSecurityScheme
+        { 
+            Reference = new OpenApiReference
+            {
+                Type = ReferenceType.SecurityScheme,
+                Id = "Bearer"
+            }
+        }, Array.Empty<string>()
+    }
+};
+var contact = new OpenApiContact()
+{
+    Name = "FirstName LastName",
+    Email = "user@example.com",
+    Url = new Uri("http://www.example.com")
+};
+
+var license = new OpenApiLicense()
+{
+    Name = "My License",
+    Url = new Uri("http://www.example.com")
+};
+var info = new OpenApiInfo()
+{
+    Version = "v1",
+    Title = "Medbase Minimal API",
+    Description = "Minimal API for Medbase",
+    TermsOfService = new Uri("http://www.example.com"),
+    Contact = contact,
+    License = license
+};
+
+
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -12,8 +68,41 @@ builder.Services.AddDbContext<DataContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultApiConnection"));
 });
+builder.Services.AddDbContext<AppIdentityDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultApiConnection"));
+});
 
-builder.Services.AddSwaggerGen();
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<AppIdentityDbContext>()
+    .AddDefaultTokenProviders();
+
+builder.Services.AddAuthentication(o => 
+{
+    o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    o.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(o =>
+{
+    o.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = false,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+    };
+});
+
+builder.Services.AddAuthorization();
+builder.Services.AddSwaggerGen(o =>
+{
+    o.SwaggerDoc("v1", info);
+    o.AddSecurityDefinition("Bearer", securityScheme);
+    o.AddSecurityRequirement(securityReq);
+});
 
 var app = builder.Build();
 
@@ -22,6 +111,8 @@ if (app.Environment.IsDevelopment())
 {
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -30,7 +121,7 @@ app.UseHttpsRedirection();
 //Questions 
 //Get functions
 var questions = app.MapGroup("/questions");
-questions.MapGet("/", async (DataContext context) => await context.Questions.ToListAsync());
+questions.MapGet("/", [Authorize] async (DataContext context) => await context.Questions.ToListAsync());
 
 questions.MapGet("/select/{id}", async Task<Results<Ok<Question>, NotFound>> (DataContext context, int id) =>
     await context.Questions.FindAsync(id)
@@ -698,5 +789,31 @@ app.MapGet("/notes/coursetopics/getall", async (DataContext context) =>
     }
     return courseTopicsDtos;
 });
+
+//AUTH
+app.MapPost("/security/getToken",
+[AllowAnonymous] (User user) =>
+{
+
+    if (user.UserName == "user1" && user.Password == "password1")
+    {
+        var issuer = builder.Configuration["Jwt:Issuer"];
+        var audience = builder.Configuration["Jwt:Audience"];
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]));
+        var credentials = new SigningCredentials(securityKey,SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(issuer: issuer,audience: audience,signingCredentials: credentials);
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var stringToken = tokenHandler.WriteToken(token);
+
+        return Results.Ok(stringToken);
+    }
+    else
+    {
+        return Results.Unauthorized();
+    }
+});
+
 
 app.Run();

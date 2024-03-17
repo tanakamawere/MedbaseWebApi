@@ -4,9 +4,6 @@ using MedbaseComponents.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Identity.Web;
@@ -37,30 +34,25 @@ var securityReq = new OpenApiSecurityRequirement()
         }, Array.Empty<string>()
     }
 };
-var contact = new OpenApiContact()
-{
-    Name = "FirstName LastName",
-    Email = "user@example.com",
-    Url = new Uri("http://www.example.com")
-};
 
-var license = new OpenApiLicense()
-{
-    Name = "My License",
-    Url = new Uri("http://www.example.com")
-};
 var info = new OpenApiInfo()
 {
     Version = "v1",
     Title = "Medbase Minimal API",
     Description = "Minimal API for Medbase",
-    TermsOfService = new Uri("http://www.example.com"),
-    Contact = contact,
-    License = license
+    TermsOfService = new Uri("http://www.medbase.co.zw/termsofservice"),
+    Contact = new OpenApiContact()
+    {
+        Name = "Tanaka Mawere",
+        Email = "tanaka@tanakamawere.co.zw",
+        Url = new Uri("http://www.tanakamawere.co.zw")
+    },
+    License = new OpenApiLicense()
+    {
+        Name = "My License",
+        Url = new Uri("http://www.example.com")
+    }
 };
-
-
-
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddDbContext<DataContext>(options => 
@@ -81,8 +73,8 @@ builder.Services.AddAuthorization();
 builder.Services.AddSwaggerGen(o =>
 {
     o.SwaggerDoc("v1", info);
-    o.AddSecurityDefinition("Bearer", securityScheme);
-    o.AddSecurityRequirement(securityReq);
+    //o.AddSecurityDefinition("Bearer", securityScheme);
+    //o.AddSecurityRequirement(securityReq);
 });
 
 var app = builder.Build();

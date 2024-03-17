@@ -1,17 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using MedbaseApi;
-using MedbaseLibrary.Models;
+using MedbaseComponents.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Data;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.OpenApi.Models;
-using System.ComponentModel;
-using Microsoft.Extensions.ObjectPool;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,14 +66,7 @@ builder.Services.AddDbContext<DataContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultApiConnection"));
 });
-builder.Services.AddDbContext<AppIdentityDbContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultApiConnection"));
-});
 
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-    .AddEntityFrameworkStores<AppIdentityDbContext>()
-    .AddDefaultTokenProviders();
 
 builder.Services.AddAuthentication(o => 
 {
@@ -177,7 +167,7 @@ questions.MapGet("/{topic}/{numResults}/{page}/{keyword}", async (DataContext co
 });
 
 
-questions.MapPost("/", async Task<Results<Ok<string>, NotFound>> (DataContext context, Question question) => 
+questions.MapPost("/add/", async Task<Results<Ok<string>, NotFound>> (DataContext context, Question question) => 
 {
     if (question == null) return TypedResults.Ok("Something wrong happened");
 
@@ -245,7 +235,7 @@ questions.MapGet("/quiz/{topic}/{number}", (DataContext context, int topic, int 
 app.MapGet("/articles", async (DataContext context) => await context.Articles.ToListAsync());
 app.MapGet("/articles/{id}", async (DataContext context, int id) => await context.Articles.FindAsync(id));
 app.MapGet("/articles/select/{number}", async (DataContext context, int number) => await context.Articles.OrderByDescending(p => p.Id).Take(number).ToListAsync());
-app.MapPost("/articles/", async Task<Results<Ok, BadRequest>> (DataContext context, Article article) =>
+app.MapPost("/article/add", async Task<Results<Ok, BadRequest>> (DataContext context, Article article) =>
 {
     await context.Articles.AddAsync(article);
     
@@ -299,7 +289,7 @@ app.MapGet("topics/select/{id}", async (DataContext context, long id) =>
     return topic;
 });
 app.MapGet("/topics/{courseref}", async (DataContext context, string courseref) => await context.Topics.Where(x => x.CourseRef == courseref).OrderBy(p => p.Id).ToListAsync());
-app.MapPost("/topics/", async Task<Results<Ok<string>, BadRequest<string>>> (DataContext context, Topic topic) => 
+app.MapPost("/topic/add", async Task<Results<Ok<string>, BadRequest<string>>> (DataContext context, Topic topic) => 
 {
     try
     {
@@ -353,7 +343,7 @@ app.MapDelete("/topics/{id}", async (DataContext context, int id) =>
 //Courses
 app.MapGet("/courses",  async (DataContext context) => await context.Courses.ToListAsync());
 app.MapGet("/courses/{id}", async (DataContext context, int id) => await context.Courses.FindAsync(id));
-app.MapPost("/courses/", async Task<Results<Ok<string>, BadRequest<string>>>  (DataContext context, Course course) => 
+app.MapPost("/course/add", async Task<Results<Ok<string>, BadRequest<string>>>  (DataContext context, Course course) => 
 {    
     try
     {
@@ -722,7 +712,7 @@ app.MapGet("/notes/get_with_reference/{topicReference}", async(DataContext conte
     }
 });
 
-app.MapPost("/notes/post/", async Task<Results<Ok, BadRequest>>(DataContext context, Note note) =>
+app.MapPost("/note/add/", async Task<Results<Ok, BadRequest>>(DataContext context, Note note) =>
 {
     try
     {
@@ -792,56 +782,19 @@ app.MapGet("/notes/coursetopics/getall", async (DataContext context) =>
 });
 
 //AUTH
-app.MapPost("/auth/getToken", [AllowAnonymous] async (UserManager<IdentityUser> userManager, User user) =>
-{
-    var identityUsr = await userManager.FindByNameAsync(user.UserName);
+//app.MapPost("/auth/getToken", [AllowAnonymous] async (UserManager<IdentityUser> userManager, User user) =>
+//{
+//    var identityUsr = await userManager.FindByNameAsync(user.UserName);
 
-    if (await userManager.CheckPasswordAsync(identityUsr, user.Password))
-    {
-        return Results.Ok(GetJWTToken());
-    }
-    else
-    {
-        return Results.Unauthorized();
-    }
-});
-
-app.MapPost("/auth/signup", [AllowAnonymous] async (UserManager<IdentityUser> userMgr, User user) =>
-{
-    var identityUser = new IdentityUser()
-    {
-        UserName = user.UserName,
-        PhoneNumber = user.PhoneNumber,
-        Email = user.Email
-    };
-
-    var result = await userMgr.CreateAsync(identityUser, user.Password);
-
-    if (result.Succeeded)
-    {
-        //Return JWT Token
-        return Results.Ok(GetJWTToken());
-    }
-    else
-    {
-        return Results.BadRequest();
-    }
-});
-
-app.MapPost("/auth/signin", [AllowAnonymous] async (UserManager<IdentityUser> userMgr, User user) =>
-{
-    var identityUser = await userMgr.FindByNameAsync(user.UserName);
-
-    if (identityUser != null && await userMgr.CheckPasswordAsync(identityUser, user.Password))
-    {
-        return Results.Ok();
-    }
-    else
-    {
-        return Results.Unauthorized();
-    }
-});
-
+//    if (await userManager.CheckPasswordAsync(identityUsr, user.Password))
+//    {
+//        return Results.Ok(GetJWTToken());
+//    }
+//    else
+//    {
+//        return Results.Unauthorized();
+//    }
+//});
 string GetJWTToken()
 {
     var issuer = builder.Configuration["Jwt:Issuer"];

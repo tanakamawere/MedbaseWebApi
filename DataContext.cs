@@ -1,4 +1,4 @@
-﻿using MedbaseLibrary.Models;
+﻿using MedbaseComponents.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +15,5 @@ namespace MedbaseApi
         public DbSet<Corrections> Corrections {get; set;}
         public DbSet<Course> Courses { get; set; }
         public DbSet<Note> Notes { get; set; }
-    }
-
-    public class AppIdentityDbContext : IdentityDbContext<IdentityUser, IdentityRole, string>
-    {
-        public AppIdentityDbContext(DbContextOptions<AppIdentityDbContext> options): base(options)
-        {
-        }
     }
 }

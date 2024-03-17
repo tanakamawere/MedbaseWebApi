@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MedbaseLibrary\MedbaseLibrary.csproj" />
+    <ProjectReference Include="..\MedbaseComponents\MedbaseComponents.csproj" />
   </ItemGroup>
 
 </Project>

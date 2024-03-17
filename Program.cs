@@ -10,56 +10,6 @@ using Microsoft.Identity.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Swagger Config for Putting JWT Token in requests
-var securityScheme = new OpenApiSecurityScheme()
-{
-    Name = "Authorization",
-    Type = SecuritySchemeType.ApiKey,
-    Scheme = "Bearer",
-    BearerFormat = "JWT",
-    In = ParameterLocation.Header,
-    Description = "JSON Web Token based security",
-};
-
-var securityReq = new OpenApiSecurityRequirement()
-{
-    {
-        new OpenApiSecurityScheme
-        { 
-            Reference = new OpenApiReference
-            {
-                Type = ReferenceType.SecurityScheme,
-                Id = "Bearer"
-            }
-        }, Array.Empty<string>()
-    }
-};
-
-var info = new OpenApiInfo()
-{
-    Version = "v1",
-    Title = "Medbase Minimal API",
-    Description = "Minimal API for Medbase",
-    TermsOfService = new Uri("http://www.medbase.co.zw/termsofservice"),
-    Contact = new OpenApiContact()
-    {
-        Name = "Tanaka Mawere",
-        Email = "tanaka@tanakamawere.co.zw",
-        Url = new Uri("http://www.tanakamawere.co.zw")
-    },
-    License = new OpenApiLicense()
-    {
-        Name = "My License",
-        Url = new Uri("http://www.example.com")
-    }
-};
-builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddDbContext<DataContext>(options => 
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultApiConnection"));
-});
-
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"))
@@ -70,12 +20,37 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddInMemoryTokenCaches();
 
 builder.Services.AddAuthorization();
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(o =>
 {
-    o.SwaggerDoc("v1", info);
+    o.SwaggerDoc("v1", new OpenApiInfo()
+    {
+        Version = "v1",
+        Title = "Medbase Minimal API",
+        Description = "Minimal API for Medbase",
+        TermsOfService = new Uri("http://www.medbase.co.zw/termsofservice"),
+        Contact = new OpenApiContact()
+        {
+            Name = "Tanaka Mawere",
+            Email = "tanaka@tanakamawere.co.zw",
+            Url = new Uri("http://www.tanakamawere.co.zw")
+        },
+        License = new OpenApiLicense()
+        {
+            Name = "My License",
+            Url = new Uri("http://www.example.com")
+        }
+    });
     //o.AddSecurityDefinition("Bearer", securityScheme);
     //o.AddSecurityRequirement(securityReq);
 });
+
+builder.Services.AddDbContext<DataContext>(options => 
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultApiConnection"));
+});
+
+
 
 var app = builder.Build();
 
@@ -84,12 +59,12 @@ if (app.Environment.IsDevelopment())
 {
 }
 
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
 
 //Questions 
 //Get functions

@@ -9,6 +9,7 @@ using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Identity.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,24 +69,13 @@ builder.Services.AddDbContext<DataContext>(options =>
 });
 
 
-builder.Services.AddAuthentication(o => 
-{
-    o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    o.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(o =>
-{
-    o.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = false,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-    };
-});
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"))
+        .EnableTokenAcquisitionToCallDownstreamApi()
+            .AddMicrosoftGraph(builder.Configuration.GetSection("MicrosoftGraph"))
+            .AddInMemoryTokenCaches()
+            .AddDownstreamWebApi("DownstreamApi", builder.Configuration.GetSection("DownstreamApi"))
+            .AddInMemoryTokenCaches();
 
 builder.Services.AddAuthorization();
 builder.Services.AddSwaggerGen(o =>
@@ -780,33 +770,5 @@ app.MapGet("/notes/coursetopics/getall", async (DataContext context) =>
     }
     return courseTopicsDtos;
 });
-
-//AUTH
-//app.MapPost("/auth/getToken", [AllowAnonymous] async (UserManager<IdentityUser> userManager, User user) =>
-//{
-//    var identityUsr = await userManager.FindByNameAsync(user.UserName);
-
-//    if (await userManager.CheckPasswordAsync(identityUsr, user.Password))
-//    {
-//        return Results.Ok(GetJWTToken());
-//    }
-//    else
-//    {
-//        return Results.Unauthorized();
-//    }
-//});
-string GetJWTToken()
-{
-    var issuer = builder.Configuration["Jwt:Issuer"];
-    var audience = builder.Configuration["Jwt:Audience"];
-    var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]));
-    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-    var token = new JwtSecurityToken(issuer: issuer, audience: audience, signingCredentials: credentials);
-
-    var tokenHandler = new JwtSecurityTokenHandler();
-    var stringToken = tokenHandler.WriteToken(token);
-    return stringToken;
-};
 
 app.Run();

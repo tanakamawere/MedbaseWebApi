@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MedbaseComponents" Version="1.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.3">
@@ -23,6 +22,10 @@
     <PackageReference Include="Microsoft.Identity.Web.MicrosoftGraph" Version="2.17.2" />
     <PackageReference Include="Microsoft.Identity.Web.UI" Version="2.17.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MedbaseComponents\MedbaseComponents.csproj" />
   </ItemGroup>
 
 </Project>

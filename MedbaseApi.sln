@@ -5,6 +5,8 @@ VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MedbaseApi", "MedbaseApi.csproj", "{6B7E15A5-D02D-4E98-9526-E1528AD667FD}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MedbaseComponents", "..\MedbaseComponents\MedbaseComponents.csproj", "{B0DE85D2-DC14-4841-A91D-F031EF243C99}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{6B7E15A5-D02D-4E98-9526-E1528AD667FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B7E15A5-D02D-4E98-9526-E1528AD667FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B7E15A5-D02D-4E98-9526-E1528AD667FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B0DE85D2-DC14-4841-A91D-F031EF243C99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B0DE85D2-DC14-4841-A91D-F031EF243C99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B0DE85D2-DC14-4841-A91D-F031EF243C99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B0DE85D2-DC14-4841-A91D-F031EF243C99}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

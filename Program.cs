@@ -69,7 +69,7 @@ app.UseSwaggerUI();
 //Questions 
 //Get functions
 var questions = app.MapGroup("/questions");
-questions.MapGet("/", [Authorize] async (DataContext context) => await context.Questions.ToListAsync());
+questions.MapGet("/", async (DataContext context) => await context.Questions.ToListAsync());
 
 questions.MapGet("/select/{id}", async Task<Results<Ok<Question>, NotFound>> (DataContext context, int id) =>
     await context.Questions.FindAsync(id)
@@ -80,12 +80,13 @@ questions.MapGet("/select/{id}", async Task<Results<Ok<Question>, NotFound>> (Da
 questions.MapGet("/{topic}", async (DataContext context, int topic) => 
     await context.Questions.Where(x => x.TopicRef == topic).OrderBy(p => p.Id).ToListAsync());
 
+//Get QuestionsPaged
 questions.MapGet("/{topic}/{numResults}/{page}", async (DataContext context, int topic, double numResults, int page) =>
 {
     var pageResults = numResults;
     var pageCount = Math.Ceiling(context.Questions.Where(x => x.TopicRef == topic).Count() / pageResults);
 
-    var products = await context.Questions
+    var questions = await context.Questions
         .Where(x => x.TopicRef == topic)
         .Skip((page - 1) * (int)pageResults)
         .Take((int)pageResults)
@@ -93,13 +94,71 @@ questions.MapGet("/{topic}/{numResults}/{page}", async (DataContext context, int
 
     var response = new QuestionPaged
     {
-        Questions = products,
+        Questions = questions,
         CurrentPage = page,
         Pages = (int)pageCount
     };
 
     return response;
 });
+
+//Get Paginated Questions with topic
+questions.MapGet("/pagedwithtopic/{topic}/{numResults}/{page}", async (DataContext context, int topic, double numResults, int page) => 
+{
+    var pageResults = numResults;
+    var pageCount = Math.Ceiling(context.Questions.Where(x => x.TopicRef == topic).Count() / pageResults);
+
+    var questions = await context.Questions
+       .Where(x => x.TopicRef == topic)
+       .Skip((page - 1) * (int)pageResults)
+       .Take((int)pageResults)
+       .ToListAsync();
+
+    var response = new QuestionPagedWithTopic
+    {
+        QuestionsWithTopic = new QuestionsWithTopicDto
+        {
+            Questions = questions,
+            TopicName = (await context.Topics.Where(x => x.TopicRef == topic).FirstOrDefaultAsync()).Name
+        },
+        CurrentPage = page,
+        Pages = (int)pageCount
+    };
+
+    return response;
+});
+
+//Get Questions with Topic without pagination
+questions.MapGet("/withtopic/{topic}", async (DataContext context, int topic) =>
+{
+    var questions = await context.Questions
+        .Where(x => x.TopicRef == topic)
+        .ToListAsync();
+
+    var response = new QuestionsWithTopicDto
+    {
+        Questions = questions,
+        TopicName = (await context.Topics.Where(x => x.TopicRef == topic).FirstOrDefaultAsync()).Name
+    };
+
+    return response;
+});
+
+//Search for questions by keyword
+questions.MapGet("/search/{keyword}", async (DataContext context, string keyword) =>
+{
+    var products = await context.Questions
+        .Where(x => x.QuestionMain.Contains(keyword) ||
+                    x.ChildA.Contains(keyword) ||
+                    x.ChildB.Contains(keyword) ||
+                    x.ChildC.Contains(keyword) ||
+                    x.ChildD.Contains(keyword) ||
+                    x.ChildE.Contains(keyword))
+        .ToListAsync();
+
+    return products;
+});
+
 //Search function for questions
 questions.MapGet("/{topic}/{numResults}/{page}/{keyword}", async (DataContext context, int topic, double numResults, int page, string keyword) =>
 {
@@ -108,7 +167,12 @@ questions.MapGet("/{topic}/{numResults}/{page}/{keyword}", async (DataContext co
 
     var products = await context.Questions
         .Where(x => x.TopicRef == topic)
-        .Where(x => x.QuestionMain.Contains(keyword))
+        .Where(x => x.QuestionMain.Contains(keyword)||
+                    x.ChildA.Contains(keyword) ||
+                    x.ChildB.Contains(keyword) ||
+                    x.ChildC.Contains(keyword) ||
+                    x.ChildD.Contains(keyword) ||
+                    x.ChildE.Contains(keyword))
         .Skip((page - 1) * (int)pageResults)
         .Take((int)pageResults)
         .ToListAsync();
